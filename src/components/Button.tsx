@@ -12,8 +12,8 @@ const ButtonStyle = styled.input`
   }
 `
 
-export function Button() { 
-    return <ButtonStyle>
+export function Button({ search='' }) { 
+    return <ButtonStyle value={search}>
         
     </ButtonStyle> 
 }

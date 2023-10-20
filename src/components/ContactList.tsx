@@ -43,12 +43,13 @@ export interface Phone {
 
 export default function ContactList() {
   const [page, setPage] = useState(0)
-  const limit = 5
+  const [search, setSearch] = useState('')
+  const limit = 10
   const { loading, error, data, fetchMore } = useQuery(GET_CONTACT_LIST, {
     variables: {
       offset: page,
       limit,
-      where: { first_name: { _like: "%%" } }
+      where: { first_name: { _like: `%${search}%` } }
     },
   });
 
@@ -57,6 +58,11 @@ export default function ContactList() {
 
   return (
     <div>
+      <input type='text' value={search} onChange={(e) => {
+        setSearch(e.target.value)
+      }}>
+        
+      </input>
       <button disabled={!page} onClick={() => {
         if(page < 0) return
         setPage(page - limit)
@@ -82,12 +88,10 @@ export default function ContactList() {
         data.contact.map((contact: Contact) => (
           <div key={contact.id}>
             <h3>{contact.first_name} {contact.last_name}</h3>
-            <br />
             <b>Phones</b>
             <ul>
               {contact.phones.map((phone) => <li>{phone.number}</li>)}
             </ul>
-            <br />
           </div>
         ))
       }
