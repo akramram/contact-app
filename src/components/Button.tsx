@@ -1,19 +1,29 @@
-import styled from '@emotion/styled'
+import styled from "@emotion/styled";
 
-const ButtonStyle = styled.input`
-  padding: 12px;
-  background-color: hotpink;
-  font-size: 24px;
-  border-radius: 4px;
-  color: black;
-  font-weight: bold;
-  &:hover {
-    color: white;
-  }
+const ButtonStyles = styled.button`
+  background-color: #176B87;
+  color: #fff;
+  border: 0;
+  display: inline-block;
+  white-space: nowrap;
+  min-height: 30px;
+  padding: 0 15px;
+  margin: 2.8px 5px 2.5px 0;
+  font-size: 0.9rem;
+  border-radius: 25px;
+  cursor: pointer;
 `
 
-export function Button({ search='' }) { 
-    return <ButtonStyle value={search}>
-        
-    </ButtonStyle> 
+interface CustomButtonProps {
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}
+
+export const Button: React.FC<CustomButtonProps> = ({ onClick, children, disabled }) => {
+  return (
+    <ButtonStyles onClick={onClick} disabled={disabled}>
+      {children}
+    </ButtonStyles>
+  );
 }

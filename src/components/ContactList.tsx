@@ -1,37 +1,14 @@
-import { useQuery, gql  } from '@apollo/client';
+import { useQuery } from '@apollo/client';
 import { useState } from 'react';
-
-const GET_CONTACT_LIST = gql`
-  query GetContactList (
-      $distinct_on: [contact_select_column!], 
-      $limit: Int, 
-      $offset: Int, 
-      $order_by: [contact_order_by!], 
-      $where: contact_bool_exp
-    ) {
-    contact(
-        distinct_on: $distinct_on, 
-        limit: $limit, 
-        offset: $offset, 
-        order_by: $order_by, 
-        where: $where
-    ){
-      created_at
-      first_name
-      id
-      last_name
-      phones {
-        number
-      }
-    }
-  }
-
-`;
+import { SearchForm, SearchInput, ClearSearchButton, ContactCard, InfoContainer, Name, PhoneNumber, ToggleButton, PaginationButton, PaginationContainer } from '../style';
+import CreateContact from './CreateContact';
+import { GET_CONTACT_LIST } from '../queries';
+import DeleteItemButton from './DeleteContact';
 
 export interface Contact {
-  created_at: string
+  created_at?: string
   first_name: string
-  id: number
+  id?: number
   last_name: string
   phones: Phone[]
 }
@@ -44,60 +21,92 @@ export interface Phone {
 export default function ContactList() {
   const [page, setPage] = useState(0)
   const [search, setSearch] = useState('')
+  const [searchQuery, setsearchQuery] = useState({
+    first_name: { _like: `%%` }
+  })
   const limit = 10
   const { loading, error, data, fetchMore } = useQuery(GET_CONTACT_LIST, {
     variables: {
       offset: page,
       limit,
-      where: { first_name: { _like: `%${search}%` } }
+      where: searchQuery
     },
   });
+
+  const handleFormSubmit = (event: any) => {
+    event.preventDefault();
+    setPage(0)
+    setsearchQuery({ ...searchQuery, first_name: { _like: `%${search}%` } })
+  }
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
 
   return (
     <div>
-      <input type='text' value={search} onChange={(e) => {
-        setSearch(e.target.value)
-      }}>
-        
-      </input>
-      <button disabled={!page} onClick={() => {
-        if(page < 0) return
-        setPage(page - limit)
-        fetchMore({
-          variables: {
-            offset: page
-          },
-        })
-      }}>
-        bek
-      </button>
-      <button disabled={data.contact.length < limit} onClick={() => {
-        setPage(page + limit)
-        fetchMore({
-          variables: {
-            offset: page
-          },
-        })
-      }}>
-        fetchmore
-      </button>
+      <CreateContact onClose={() => fetchMore({
+        variables: {
+          offset: page
+        },
+      })} />
+      <SearchForm onSubmit={handleFormSubmit}>
+        <SearchInput id='search_field' type='text' placeholder='Search Contact' value={search} onChange={(e: any) => {
+          setSearch(e.target.value)
+        }}>
+        </SearchInput>
+        {
+          search ? <ClearSearchButton type="reset" content='Clear' onClick={() => {
+            setSearch('')
+            setsearchQuery({
+              first_name: { _like: `%%` }
+            })
+          }}>🧹</ClearSearchButton> : ''
+        }
+      </SearchForm>
+      <PaginationContainer>
+        <PaginationButton disabled={!page} onClick={() => {
+          if (page < 0) return
+          setPage(page - limit)
+          fetchMore({
+            variables: {
+              offset: page
+            },
+          })
+        }}>
+          {'<'}
+        </PaginationButton>
+        <PaginationButton disabled={data.contact.length < limit} onClick={() => {
+          setPage(page + limit)
+          fetchMore({
+            variables: {
+              offset: page
+            },
+          })
+        }}>
+          {'>'}
+        </PaginationButton>
+      </PaginationContainer>
       {
         data.contact.map((contact: Contact) => (
           <div key={contact.id}>
-            <h3>{contact.first_name} {contact.last_name}</h3>
-            <b>Phones</b>
-            <ul>
-              {contact.phones.map((phone) => <li>{phone.number}</li>)}
-            </ul>
+            <ContactCard>
+              <InfoContainer>
+                <Name>
+                  {contact.first_name} {contact.last_name}
+                </Name>
+                {contact.phones.map((phone) => <PhoneNumber>{phone.number}</PhoneNumber>)}
+
+              </InfoContainer>
+              <DeleteItemButton id={contact.id} deleted={() => setsearchQuery({
+                first_name: { _like: `%%` }
+              })} />
+              <ToggleButton>
+                ⭐
+              </ToggleButton>
+            </ContactCard>
           </div>
         ))
       }
-
-      
     </div>
-
   )
 }

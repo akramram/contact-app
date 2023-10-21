@@ -1,0 +1,50 @@
+/* Reset some default styles */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #04364A;
+    color: #DAFFFB;
+}
+
+/* Apply mobile-first styles */
+.App {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 10px;
+}
+
+/* Media query for tablet screens */
+@media screen and (min-width: 768px) {
+    .App {
+        max-width: 768px;
+    }
+}
+
+/* Media query for small desktop screens */
+@media screen and (min-width: 1024px) {
+    .App {
+        max-width: 1024px;
+    }
+}
+
+/* Hide spinner for Webkit-based browsers (Chrome and Safari) */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Hide spinner for Firefox and some other browsers */
+input[type="number"] {
+    -moz-appearance: textfield;
+    /* Firefox */
+    appearance: textfield;
+    /* Some other browsers */
+}
+
+label {
+    font-size: smaller;
+    color: #64CCC5;
+}
