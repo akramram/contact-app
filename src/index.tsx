@@ -12,11 +12,11 @@ const client = new ApolloClient({
   uri: 'https://wpe-hiring.tokopedia.net/graphql',
   cache: new InMemoryCache({
     typePolicies: {
-      contact: {
-        merge(existing = [], incoming: any[]) {
-          return [...existing, ...incoming];
-        },
-      },
+      // contact: {
+      //   merge(existing:any[] = [], incoming: any[]) {
+      //     return [...existing, ...incoming];
+      //   },
+      // },
     },
   }),
 });

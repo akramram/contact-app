@@ -20,22 +20,31 @@ export interface Phone {
 
 export default function ContactList() {
   const [page, setPage] = useState(0)
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(new URLSearchParams(window.location.search).get('q') || '')
+  const urlSearchQuery = new URLSearchParams(window.location.search).get('q') || '';
   const [searchQuery, setsearchQuery] = useState({
-    first_name: { _like: `%%` }
+    first_name: { _like: urlSearchQuery ? `%${urlSearchQuery}%` : undefined }
   })
   const limit = 10
-  const { loading, error, data, fetchMore } = useQuery(GET_CONTACT_LIST, {
+  const { loading, error, data, fetchMore, refetch } = useQuery(GET_CONTACT_LIST, {
     variables: {
       offset: page,
       limit,
       where: searchQuery
     },
   });
+  
+    // Function to update the URL with a new search query
+    const updateSearchQuery = (newQuery: string) => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('q', newQuery);
+      window.history.pushState({}, '', url);
+    }
 
   const handleFormSubmit = (event: any) => {
     event.preventDefault();
     setPage(0)
+    updateSearchQuery(search)
     setsearchQuery({ ...searchQuery, first_name: { _like: `%${search}%` } })
   }
 
@@ -44,12 +53,8 @@ export default function ContactList() {
 
   return (
     <div>
-      <CreateContact onClose={() => fetchMore({
-        variables: {
-          offset: page
-        },
-      })} />
-      <SearchForm onSubmit={handleFormSubmit}>
+      <CreateContact onClose={() => refetch()} />
+      <SearchForm onSubmit={(e) => handleFormSubmit(e)}>
         <SearchInput id='search_field' type='text' placeholder='Search Contact' value={search} onChange={(e: any) => {
           setSearch(e.target.value)
         }}>
@@ -94,12 +99,11 @@ export default function ContactList() {
                 <Name>
                   {contact.first_name} {contact.last_name}
                 </Name>
-                {contact.phones.map((phone) => <PhoneNumber>{phone.number}</PhoneNumber>)}
+                {contact.phones.map((phone) => <PhoneNumber key={phone.number}>{phone.number}</PhoneNumber>)}
 
               </InfoContainer>
-              <DeleteItemButton id={contact.id} deleted={() => setsearchQuery({
-                first_name: { _like: `%%` }
-              })} />
+              <CreateContact id={contact.id} item={contact} onClose={() => refetch()} />
+              <DeleteItemButton id={contact.id} deleted={() => refetch()} />
               <ToggleButton>
                 ⭐
               </ToggleButton>

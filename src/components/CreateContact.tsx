@@ -3,27 +3,62 @@ import { AddButton, ClearSearchButton, SearchForm, SearchInput } from '../style'
 import Modal from './DialogGeneral';
 import { Button } from './Button';
 import { useMutation } from '@apollo/client';
-import { ADD_CONTACT_WITH_PHONES } from '../queries';
-import { Contact } from './ContactList';
+import { ADD_CONTACT_WITH_PHONES, EDIT_CONTACT_BY_ID, EDIT_CONTACT_PHONE_NUMBER } from '../queries';
+import { Contact, Phone } from './ContactList';
 
 interface IFCreateContact {
     onClose: () => void;
+    id?: number,
+    item?: Contact
 }
 
-const CreateContact: React.FC<IFCreateContact> = ({ onClose }) => {
+const CreateContact: React.FC<IFCreateContact> = ({ onClose, id, item }) => {
     const [addContact, { loading }] = useMutation(ADD_CONTACT_WITH_PHONES);
     const handleAddContact = async () => {
         const variables = form;
 
         try {
-            const response = await addContact({ variables });
-            const newContact = response.data.insert_contact.returning;
-            console.log('New Contact:', newContact);
+            await addContact({ variables }).then(() => setIsModalOpen(false))
             onClose()
         } catch (error) {
             console.error('Error adding contact:', error);
         }
     };
+
+    const [editContact] = useMutation(EDIT_CONTACT_BY_ID);
+    const [editContactPhoneNumber] = useMutation(EDIT_CONTACT_PHONE_NUMBER);
+    const handleEditContact = async () => {
+        try {
+            const promises = form.phones.map((phone, index) => handleEditPhoneNumbers(phone, index))
+            const editContactInfo = editContact({
+                variables: {
+                    id, _set: {
+                        first_name: form.first_name,
+                        last_name: form.last_name,
+                    }
+                },
+            })
+            await Promise.all([...promises, editContactInfo]).then(() => setIsModalOpen(false))
+        } catch (error) {
+            console.error('Error editing contact:', error);
+        }
+    };
+    const handleEditPhoneNumbers = async (contact: Phone, index: number) => {
+        try {
+            await editContactPhoneNumber({
+                variables: {
+                    pk_columns: {
+                        number: item?.phones[index].number,
+                        contact_id: id,
+                    },
+                    new_phone_number: contact.number,
+                }
+            })
+            onClose()
+        } catch (error) {
+            console.error('Error updating phone numbers:', error);
+        }
+    }
 
     const [form, setForm] = useState<Contact>({
         first_name: '',
@@ -39,6 +74,13 @@ const CreateContact: React.FC<IFCreateContact> = ({ onClose }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const openModal = () => {
+        if (item) {
+            setForm({
+                first_name: item.first_name,
+                last_name: item.last_name,
+                phones: item.phones.map((phone) => { return { number: phone.number.toString() } })
+            })
+        }
         setIsModalOpen(true);
     };
 
@@ -47,16 +89,15 @@ const CreateContact: React.FC<IFCreateContact> = ({ onClose }) => {
     };
 
     const handleRemoveItem = (index: number) => {
-        const newArray = [...form.phones.slice(0, index), ...form.phones.slice(index + 1)];
-
-        setForm({ ...form, phones: newArray })
+        form.phones.splice(index, 1);
+        setForm({ ...form, phones: form.phones })
     }
     return (
         <div>
-            <Button onClick={openModal}>Add Contact</Button>
+            <Button onClick={openModal}>{id ? 'Edit' : 'Add Contact'}</Button>
             <Modal isOpen={isModalOpen} onClose={closeModal}>
                 <div style={{ minWidth: '300px' }}>
-                    <h3 style={{ textAlign: 'center' }}> Create New Contact </h3>
+                    <h3 style={{ textAlign: 'center' }}> {id ? 'Edit Contact' : 'Create New Contact'} </h3>
                     <label>First Name</label>
                     <SearchForm>
                         <SearchInput
@@ -79,14 +120,15 @@ const CreateContact: React.FC<IFCreateContact> = ({ onClose }) => {
                     </SearchForm>
                     <label>Phone Numbers</label>
                     {
-                        form.phones.map((item: any, index: any) => {
+                        form.phones.map((item: Phone, index: number) => {
                             return (
-                                <div style={{ display: 'flex', alignItems: 'center', }}>
+                                <div style={{ display: 'flex', alignItems: 'center', }} key={index}>
                                     <SearchInput
-                                        type="number"
+                                        type="text"
+                                        value={item.number}
                                         placeholder="Nomor" onChange={(e) => changePhones(index, e.target.value)}></SearchInput>
                                     {
-                                        index > 0 &&
+                                        (index > 0 && !id) &&
                                         <ClearSearchButton onClick={() => {
                                             handleRemoveItem(index)
                                         }}>
@@ -97,10 +139,10 @@ const CreateContact: React.FC<IFCreateContact> = ({ onClose }) => {
                             )
                         })
                     }
-                    <div style={{ textAlign: 'right' }}>
+                    {(!id) && <div style={{ textAlign: 'right' }}>
                         <AddButton onClick={() => setForm({ ...form, phones: [...form.phones, { number: '' }] })}>+</AddButton>
-                    </div>
-                    <Button onClick={handleAddContact}>{loading ? 'Adding contact...' : 'Add Contact'}</Button>
+                    </div>}
+                    <Button onClick={id ? handleEditContact : handleAddContact}>{loading ? 'Adding contact...' : id ? 'Save Changes' : 'Add Contact'}</Button>
                 </div>
             </Modal>
         </div>
