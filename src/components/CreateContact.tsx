@@ -85,6 +85,11 @@ const CreateContact: React.FC<IFCreateContact> = ({ onClose, id, item }) => {
     };
 
     const closeModal = () => {
+        setForm({
+            first_name: '',
+            last_name: '',
+            phones: [{ number: '' }]
+        })
         setIsModalOpen(false);
     };
 

@@ -33,13 +33,13 @@ export default function ContactList() {
       where: searchQuery
     },
   });
-  
-    // Function to update the URL with a new search query
-    const updateSearchQuery = (newQuery: string) => {
-      const url = new URL(window.location.href);
-      url.searchParams.set('q', newQuery);
-      window.history.pushState({}, '', url);
-    }
+
+  // Function to update the URL with a new search query
+  const updateSearchQuery = (newQuery: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('q', newQuery);
+    window.history.pushState({}, '', url);
+  }
 
   const handleFormSubmit = (event: any) => {
     event.preventDefault();
@@ -48,6 +48,16 @@ export default function ContactList() {
     setsearchQuery({ ...searchQuery, first_name: { _like: `%${search}%` } })
   }
 
+  // Check if data is available and not loading
+  if (!loading && !error && data) {
+    // Save the data to localStorage as a JSON string
+    localStorage.setItem('dataKey', JSON.stringify(data));
+  }
+  const storedData = localStorage.getItem('dataKey');
+  if (storedData) {
+    const data = JSON.parse(storedData);
+    // Now 'data' contains the object retrieved from localStorage
+  }
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
 
@@ -63,7 +73,7 @@ export default function ContactList() {
           search ? <ClearSearchButton type="reset" content='Clear' onClick={() => {
             setSearch('')
             setsearchQuery({
-              first_name: { _like: `%%` }
+              first_name: { _like: undefined }
             })
           }}>🧹</ClearSearchButton> : ''
         }
@@ -100,7 +110,6 @@ export default function ContactList() {
                   {contact.first_name} {contact.last_name}
                 </Name>
                 {contact.phones.map((phone) => <PhoneNumber key={phone.number}>{phone.number}</PhoneNumber>)}
-
               </InfoContainer>
               <CreateContact id={contact.id} item={contact} onClose={() => refetch()} />
               <DeleteItemButton id={contact.id} deleted={() => refetch()} />
