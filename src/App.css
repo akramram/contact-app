@@ -48,3 +48,8 @@ label {
     font-size: smaller;
     color: #64CCC5;
 }
+
+:disabled {
+    background-color: #10556d !important; /* Set the desired background color */
+    color: #888 !important; /* You can also adjust the text color if needed */
+}

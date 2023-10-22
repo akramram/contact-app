@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { AddButton, ClearSearchButton, SearchForm, SearchInput } from '../style';
 import Modal from './DialogGeneral';
 import { Button } from './Button';
-import { useMutation } from '@apollo/client';
-import { ADD_CONTACT_WITH_PHONES, EDIT_CONTACT_BY_ID, EDIT_CONTACT_PHONE_NUMBER } from '../queries';
+import { useMutation, useQuery } from '@apollo/client';
+import { ADD_CONTACT_WITH_PHONES, EDIT_CONTACT_BY_ID, EDIT_CONTACT_PHONE_NUMBER, GET_CONTACT_LIST } from '../queries';
 import { Contact, Phone } from './ContactList';
 
 interface IFCreateContact {
@@ -18,7 +18,7 @@ const CreateContact: React.FC<IFCreateContact> = ({ onClose, id, item }) => {
         const variables = form;
 
         try {
-            await addContact({ variables }).then(() => setIsModalOpen(false))
+            await addContact({ variables }).then(() => closeModal())
             onClose()
         } catch (error) {
             console.error('Error adding contact:', error);
@@ -53,7 +53,7 @@ const CreateContact: React.FC<IFCreateContact> = ({ onClose, id, item }) => {
                     },
                     new_phone_number: contact.number,
                 }
-            })
+            }).then(() => closeModal())
             onClose()
         } catch (error) {
             console.error('Error updating phone numbers:', error);
@@ -65,6 +65,14 @@ const CreateContact: React.FC<IFCreateContact> = ({ onClose, id, item }) => {
         last_name: '',
         phones: [{ number: '' }]
     });
+
+    const resetForm = () => {
+        setForm({
+            first_name: '',
+            last_name: '',
+            phones: [{ number: '' }]
+        })
+    }
     const changePhones = (index: any, value: any) => {
         if (!index) setForm({ ...form, phones: [...form.phones, { number: value }] })
         let phones = [...form.phones]
@@ -85,11 +93,7 @@ const CreateContact: React.FC<IFCreateContact> = ({ onClose, id, item }) => {
     };
 
     const closeModal = () => {
-        setForm({
-            first_name: '',
-            last_name: '',
-            phones: [{ number: '' }]
-        })
+        resetForm()
         setIsModalOpen(false);
     };
 
@@ -97,6 +101,62 @@ const CreateContact: React.FC<IFCreateContact> = ({ onClose, id, item }) => {
         form.phones.splice(index, 1);
         setForm({ ...form, phones: form.phones })
     }
+
+    const { data, refetch } = useQuery(GET_CONTACT_LIST, {
+        variables: {
+            limit: 1,
+            where: {
+                first_name: { _like: form.first_name }
+            }
+        },
+    });
+
+    // State to hold form errors
+    const [formErrors, setFormErrors] = useState({
+        first_name: '',
+    });
+
+    // Function to handle form input changes
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { value } = e.target;
+        setForm({ ...form, first_name: value });
+        setFormErrors({ ...formErrors, first_name: '' });
+    };
+
+    // Function to handle form submission
+    const handleSubmit = () => {
+        refetch()
+        // Validate the form fields
+        const errors = validateForm(form);
+        setFormErrors(errors);
+
+        if (Object.keys(errors).length === 0) {
+            // Check if the name is unique
+            if (data.contact.length > 0) {
+                setFormErrors({ ...errors, first_name: 'Name must be unique' });
+            } else {
+                return id ? handleEditContact() : handleAddContact()
+            }
+        }
+    };
+
+    // Function to validate form fields
+    const validateForm = (data: any) => {
+        const errors: any = {};
+        if (!data.first_name.trim()) {
+            errors.first_name = 'First name is required';
+        } else if (!isValidName(data.first_name)) {
+            errors.first_name = 'First name contains special characters';
+        }
+        return errors;
+    };
+
+    // Function to validate name (no special characters)
+    const isValidName = (name: string) => {
+        const namePattern = /^[a-zA-Z\s]*$/;
+        return namePattern.test(name);
+    };
+
     return (
         <div>
             <Button onClick={openModal}>{id ? 'Edit' : 'Add Contact'}</Button>
@@ -107,12 +167,14 @@ const CreateContact: React.FC<IFCreateContact> = ({ onClose, id, item }) => {
                     <SearchForm>
                         <SearchInput
                             type="text"
+                            name="first_name"
                             placeholder="First Name"
                             value={form.first_name}
-                            onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                            onChange={(e) => handleInputChange(e)}
                         />
                         <ClearSearchButton>ㅤ</ClearSearchButton>
                     </SearchForm>
+                    <div style={{ color: '#F875AA', fontSize: '0.8rem' }}>{formErrors.first_name}</div>
                     <label>Last Name</label>
                     <SearchForm>
                         <SearchInput
@@ -144,10 +206,12 @@ const CreateContact: React.FC<IFCreateContact> = ({ onClose, id, item }) => {
                             )
                         })
                     }
-                    {(!id) && <div style={{ textAlign: 'right' }}>
-                        <AddButton onClick={() => setForm({ ...form, phones: [...form.phones, { number: '' }] })}>+</AddButton>
-                    </div>}
-                    <Button onClick={id ? handleEditContact : handleAddContact}>{loading ? 'Adding contact...' : id ? 'Save Changes' : 'Add Contact'}</Button>
+                    {
+                        (!id) && <div style={{ textAlign: 'right' }}>
+                            <AddButton onClick={() => setForm({ ...form, phones: [...form.phones, { number: '' }] })}>+</AddButton>
+                        </div>
+                    }
+                    <Button onClick={() => handleSubmit()} disabled={!form.first_name}>{loading ? 'Adding contact...' : id ? 'Save Changes' : 'Add Contact'}</Button>
                 </div>
             </Modal>
         </div>
