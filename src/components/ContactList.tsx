@@ -53,21 +53,20 @@ export default function ContactList() {
     // Save the data to localStorage as a JSON string
     localStorage.setItem('dataKey', JSON.stringify(data));
   }
-  const [favorite, setFav] = useState<any[]>(() => {
+  const [favorites, setFav] = useState<any[]>(() => {
     const storedValue = JSON.parse(localStorage.getItem('dataFav') || '[]')
     return storedValue ? storedValue : [];
   })
-  const addFav = (tese: any) => {
+  const addFav = (selected: any) => {
     try {
-      const foundItem = favorite.find((fave: any) => fave.id === tese.id) || null
+      const foundItem = favorites.find((favorite: any) => favorite.id === selected.id) || null
       if (!foundItem) {
-        const combined = [...favorite, tese]
+        const combined = [...favorites, selected]
         setFav(combined)
-        console.log(favorite);
 
         localStorage.setItem('dataFav', JSON.stringify(combined));
       } else {
-        const removed = favorite.filter((fave: any) => fave.id !== tese.id)
+        const removed = favorites.filter((favorite: any) => favorite.id !== selected.id)
         setFav(removed)
         localStorage.setItem('dataFav', JSON.stringify(removed));
       }
@@ -76,7 +75,7 @@ export default function ContactList() {
 
     }
   }
-  const storedFav = JSON.parse(localStorage.getItem('dataFav') || '[]');
+  const storedFavorites = JSON.parse(localStorage.getItem('dataFav') || '[]');
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
@@ -122,8 +121,8 @@ export default function ContactList() {
           {'>'}
         </PaginationButton>
       </PaginationContainer>
-      {storedFav &&
-        favorite.map((contact: Contact) => {
+      {storedFavorites &&
+        favorites.map((contact: Contact) => {
           return (
             <div key={contact.id}>
               <ContactCard>
@@ -136,7 +135,7 @@ export default function ContactList() {
                 <CreateContact id={contact.id} item={contact} onClose={() => refetch()} />
                 <DeleteItemButton id={contact.id} deleted={() => refetch()} />
                 <ToggleButton onClick={() => addFav(contact)}>
-                  {favorite.find((fav) => fav.id === contact.id) ? '⭐' : ''}
+                  {favorites.find((fav) => fav.id === contact.id) ? '⭐' : ''}
                 </ToggleButton>
               </ContactCard>
             </div>
@@ -145,7 +144,7 @@ export default function ContactList() {
       }
       {
         data.contact.map((contact: Contact) => {
-          if (favorite.find((fav) => fav.id === contact.id)) return ''
+          if (favorites.find((fav) => fav.id === contact.id)) return ''
           return (
             <div key={contact.id}>
               <ContactCard>
