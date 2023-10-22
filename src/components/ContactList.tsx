@@ -23,7 +23,7 @@ export default function ContactList() {
   const [search, setSearch] = useState(new URLSearchParams(window.location.search).get('q') || '')
   const urlSearchQuery = new URLSearchParams(window.location.search).get('q') || '';
   const [searchQuery, setsearchQuery] = useState({
-    first_name: { _like: urlSearchQuery ? `%${urlSearchQuery}%` : undefined }
+    first_name: { _like: urlSearchQuery ? `%${urlSearchQuery}%` : '' }
   })
   const limit = 10
   const { loading, error, data, fetchMore, refetch } = useQuery(GET_CONTACT_LIST, {
@@ -92,9 +92,7 @@ export default function ContactList() {
         {
           search ? <ClearSearchButton type="reset" content='Clear' onClick={() => {
             setSearch('')
-            setsearchQuery({
-              first_name: { _like: undefined }
-            })
+            refetch()
           }}>🧹</ClearSearchButton> : ''
         }
       </SearchForm>
@@ -127,7 +125,7 @@ export default function ContactList() {
             <div key={contact.id}>
               <ContactCard>
                 <InfoContainer>
-                  <Name>
+                  <Name id='contact-name'>
                     {contact.first_name} {contact.last_name}
                   </Name>
                   {contact.phones.map((phone) => <PhoneNumber key={phone.number}>{phone.number}</PhoneNumber>)}
@@ -149,7 +147,7 @@ export default function ContactList() {
             <div key={contact.id}>
               <ContactCard>
                 <InfoContainer>
-                  <Name>
+                  <Name id='contact-name'>
                     {contact.first_name} {contact.last_name}
                   </Name>
                   {contact.phones.map((phone) => <PhoneNumber key={phone.number}>{phone.number}</PhoneNumber>)}

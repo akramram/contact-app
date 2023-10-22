@@ -32,8 +32,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
     if (!isOpen) return null;
 
     return (
-        <Overlay>
-            <ModalContent>
+        <Overlay id='modal-overlay'>
+            <ModalContent id='modal-content'>
                 {children}
                 <button style={{
                     color: '#fff',
